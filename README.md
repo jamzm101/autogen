@@ -6,7 +6,7 @@
 
 This project is a spinoff from [FLAML](https://github.com/microsoft/FLAML).
 
-# AutoGen
+# AutoGen clone onto JM
 
 <!-- <p align="center">
     <img src="https://github.com/microsoft/autogen/blob/main/website/static/img/flaml.svg"  width=200>
