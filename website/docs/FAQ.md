@@ -22,7 +22,7 @@ assistant = autogen.AssistantAgent(
 )
 ```
 
-The `llm_config` is used in the [`create`](/docs/reference/oai/completion#create) function for LLM inference.
+The `llm_config` is used in the [`create`](/docs/reference/oai/client#create) function for LLM inference.
 When `llm_config` is not provided, the agent will rely on other openai settings such as `openai.api_key` or the environment variable `OPENAI_API_KEY`, which can also work when you'd like to use a single endpoint.
 You can also explicitly specify that by:
 ```python
@@ -35,11 +35,10 @@ Yes. Please check https://microsoft.github.io/autogen/blog/2023/07/14/Local-LLMs
 
 ## Handle Rate Limit Error and Timeout Error
 
-You can set `retry_wait_time` and `max_retry_period` to handle rate limit error. And you can set `request_timeout` to handle timeout error. They can all be specified in `llm_config` for an agent, which will be used in the [`create`](/docs/reference/oai/completion#create) function for LLM inference.
+You can set `max_retries` to handle rate limit error. And you can set `timeout` to handle timeout error. They can all be specified in `llm_config` for an agent, which will be used in the OpenAI client for LLM inference. They can be set differently for different clients if they are set in the `config_list`.
 
-- `retry_wait_time` (int): the time interval to wait (in seconds) before retrying a failed request.
-- `max_retry_period` (int): the total timeout (in seconds) allowed for retrying failed requests.
-- `request_timeout` (int): the timeout (in seconds) sent with a single request.
+- `max_retries` (int): the total number of times allowed for retrying failed requests for a single client.
+- `timeout` (int): the timeout (in seconds) for a single client.
 
 Please refer to the [documentation](/docs/Use-Cases/enhanced_inference#runtime-error) for more info.
 
@@ -88,7 +87,6 @@ Otherwise, reply CONTINUE, or the reason why the task is not solved yet."""
 
 If you have problems with agents running `pip install` or get errors similar to `Error while fetching server API version: ('Connection aborted.', FileNotFoundError(2, 'No such file or directory')`, you can choose **'python:3'** as image as shown in the code example above and that should solve the problem.
 
-
 ### Agents keep thanking each other when using `gpt-3.5-turbo`
 
 When using `gpt-3.5-turbo` you may often encounter agents going into a "gratitude loop", meaning when they complete a task they will begin congratulating and thanking eachother in a continuous loop. This is a limitation in the performance of `gpt-3.5-turbo`, in contrast to `gpt-4` which has no problem remembering instructions. This can hinder the experimentation experience when trying to test out your own use case with cheaper models.
@@ -108,3 +106,24 @@ prompt += termination_notice
 ```
 
 **Note**: This workaround gets the job done around 90% of the time, but there are occurences where the LLM still forgets to terminate the conversation.
+
+## ChromaDB fails in codespaces because of old version of sqlite3
+
+(from [issue #251](https://github.com/microsoft/autogen/issues/251))
+
+Code examples that use chromadb (like retrieval) fail in codespaces due to a sqlite3 requirement.
+```
+>>> import chromadb
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "/home/vscode/.local/lib/python3.10/site-packages/chromadb/__init__.py", line 69, in <module>
+    raise RuntimeError(
+RuntimeError: Your system has an unsupported version of sqlite3. Chroma requires sqlite3 >= 3.35.0.
+Please visit https://docs.trychroma.com/troubleshooting#sqlite to learn how to upgrade.
+```
+
+Workaround:
+1. `pip install pysqlite3-binary`
+2. `mkdir /home/vscode/.local/lib/python3.10/site-packages/google/colab`
+
+Explanation: Per [this gist](https://gist.github.com/defulmere/8b9695e415a44271061cc8e272f3c300?permalink_comment_id=4711478#gistcomment-4711478), linked from the official [chromadb docs](https://docs.trychroma.com/troubleshooting#sqlite), adding this folder triggers chromadb to use pysqlite3 instead of the default.
